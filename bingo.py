@@ -18,6 +18,8 @@ from pathlib import Path
 
 from inkex.elements import TextElement
 from pypdf import PdfWriter
+from PIL import Image
+
 
 
 SVG_PATH = "bingo_card.svg"
@@ -314,9 +316,24 @@ def create_svg_from_base(i: int = 0) -> Path:
     return new_svg_path
 
 
-def convert_svg_to_pdf(svg_path):
+def new_ext_path(old_path, ext):
+    return f"{old_path.parent / old_path.stem}.{ext}"
+
+
+def convert_svg_to_new_type(svg_path, ext):
     # inkscape document.svg --export-type=pdf --export-filename document.pdf
-    pdf_path = f"{svg_path.parent / svg_path.stem}.pdf"
+    new_path = new_ext_path(svg_path, ext)
+    subprocess.run([
+        "inkscape",
+        f"--export-filename={new_path}",
+        f"{svg_path}"
+    ])
+    return new_path
+
+
+def convert_svg_to_png(svg_path):
+    # inkscape document.svg --export-type=pdf --export-filename document.pdf
+    pdf_path = f"{svg_path.parent / svg_path.stem}.png"
     subprocess.run([
         "inkscape",
         f"--export-filename={pdf_path}",
@@ -333,11 +350,21 @@ def merge_pdf_files(pdf_path_list, merge_path):
     merger.close() 
 
 
+def convert_png_to_jpg(png_path):
+    jpg_path = new_ext_path(svg_path, 'jpg')
+    im = Image.open(png_path)
+    rgb_im = im.convert('RGB')
+    rgb_im.save(jpg_path)
+    return jpg_path
+
+
 if __name__ == "__main__":
     pdf_path_list = []
     for i in range(100):
         svg_path = create_svg_from_base(i)
-        pdf_path = convert_svg_to_pdf(svg_path)
-        pdf_path_list.append(pdf_path)
-    merge_pdf_files(pdf_path_list, MERGED_PATH)
+        #pdf_path = convert_svg_to_new_type(svg_path, "pdf")
+        #pdf_path_list.append(pdf_path)
+        png_path = convert_svg_to_new_type(svg_path, "png")
+        convert_png_to_jpg(png_path)
+    #merge_pdf_files(pdf_path_list, MERGED_PATH)
     print("Done.")
